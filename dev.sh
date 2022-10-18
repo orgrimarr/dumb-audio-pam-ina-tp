@@ -1,3 +1,4 @@
 #! /bin/sh
 
-flask --app app/server.py --debug run
+export FLASK_APP=server:app
+flask --debug run
