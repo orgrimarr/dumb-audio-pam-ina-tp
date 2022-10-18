@@ -1,0 +1,79 @@
+<html lang="fr">
+
+<head>
+  <title>INA TP PAM</title>
+  <meta name="robots" content="noindex">
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/aud-player.css') }}">
+
+</head>
+
+<body>
+  <h1>INA TP PAM</h1>
+  <div id="app">
+    <div id="left-container">
+      <div id="asset-filter"></div>
+      <div id="asset-list"></div>
+    </div>
+    <div id="right-container">
+      <div id="asset-details">
+        <div id="asset-detail-container">
+          <h2 id="asset-detail-title"></h2>
+          <div class="asset-detail-line">
+            <div class="bold">Asset ID</div>
+            <div id="asset-id"></div>
+          </div>
+          <div class="asset-detail-line">
+            <div class="bold">Author</div>
+            <div id="asset-author"></div>
+          </div>
+          <div class="asset-detail-line">
+            <div class="bold">Body</div>
+            <div id="asset-description"></div>
+          </div>
+          <div class="asset-detail-line">
+            <div class="bold">Media ID</div>
+            <div id="asset-media-id"></div>
+          </div>
+        </div>
+      </div>
+      <div id="player" style="display: none">
+        <div id="aWrap">
+          <!-- (B) PLAY/PAUSE BUTTON -->
+          <button id="aPlay" disabled><span id="aPlayIco" class="material-icons">
+            play_arrow
+          </span></button>
+    
+          <!-- (C) TIME -->
+          <div id="aCron">
+            <span id="aNow"></span> / <span id="aTime"></span>
+          </div>
+    
+          <!-- (D) SEEK BAR -->
+          <input id="aSeek" type="range" min="0" value="0" step="1" disabled/>
+    
+          <!-- (E) VOLUME SLIDE -->
+          <span id="aVolIco" class="material-icons">volume_up</span>
+          <input id="aVolume" type="range" min="0" max="1" value="1" step="0.1" disabled/>
+        </div>
+      </div>
+    </div>
+
+    <template id="asset">
+      <div class="asset-container">
+        <img src="{{ url_for('static',filename='img/sound.png') }}" alt="sound-picto" class="asset-picto">
+        <div class="asset-title"></div>
+        <div class="asset-author"></div>
+        <div class="asset-date"></div>
+      </div>
+    </template>
+  </div>
+
+  <script src="{{ url_for('static',filename='js/app.js') }}"></script>
+</body>
+
+</html>
