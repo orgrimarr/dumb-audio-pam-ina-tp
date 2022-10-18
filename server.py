@@ -12,6 +12,8 @@ load_dotenv()
 S3_HOST = os.getenv('CELLAR_ADDON_HOST')
 S3_KEY = os.getenv('CELLAR_ADDON_KEY_ID')
 S3_SECRET = os.getenv('CELLAR_ADDON_KEY_SECRET')
+S3_BUCKET = os.getenv('CELLAR_BUCKET') if os.getenv(
+    'CELLAR_BUCKET') else "pam-medias"
 PORT = int(os.getenv('PORT')) if os.getenv('PORT') else 5000
 
 s3 = boto3.client(
@@ -40,14 +42,14 @@ asset_schema = {
 def s3_get_download_url(asset_id):
     media_key = f"audio/{asset_id}.mp3"
     result = s3.list_objects(
-        Bucket="pam", Prefix=media_key, Delimiter='/', MaxKeys=1)
+        Bucket=S3_BUCKET, Prefix=media_key, Delimiter='/', MaxKeys=1)
     if 'Contents' in result:
         for obj in result['Contents']:
             if obj['Key'] == media_key:
                 url = s3.generate_presigned_url(
                     ClientMethod='get_object',
                     Params={
-                        'Bucket': 'pam',
+                        'Bucket': S3_BUCKET,
                         'Key': media_key
                     }
                 )
@@ -83,6 +85,7 @@ def create_asset():
     assets.append(new_asset)
     return json.dumps(new_asset)
 
+
 @app.route('/assets/<asset_id>/media_status', methods=['GET'])
 def get_asset_media_status(asset_id):
     media_uri, media_key = s3_get_download_url(asset_id)
@@ -108,6 +111,7 @@ def not_found(error):
 @app.errorhandler(500)
 def server_error(error):
     return json.dumps({"message": f"{error}. See logs for more details"})
+
 
 if __name__ == '__main__':
     app.run(port=PORT)
