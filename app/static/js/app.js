@@ -7,10 +7,18 @@ const fetchAssets = async function () {
   return assets || []
 }
 
-let audio = null
+const fetchAssetMediaStatus = async function (assetID) {
+  const result = await fetch(`assets/${assetID}/media_status`)
+  if (result.status !== 200) {
+    throw new Error(`Error fetching asset list. ${result.status} ${result.statusText} ${await result.text()}`)
+  }
+  const data = await result.json()
+  return data
+}
 
-const loadPlayer = function (mediaID) {
-  console.log('loadPlayer', mediaID)
+let audio = null
+const loadPlayer = function (mediaURI) {
+  console.log('loadPlayer', mediaURI)
 
   try {
     if (audio) {
@@ -20,12 +28,12 @@ const loadPlayer = function (mediaID) {
   catch (e) { }
   document.querySelector('#player').style.display = 'none'
 
-  if (!mediaID) {
+  if (!mediaURI) {
     return
   }
 
   // (A) AUDIO OBJECT + HTML CONTROLS
-  audio = new Audio(`/asset/${mediaID}/media`),
+  audio = new Audio(mediaURI),
     aPlay = document.getElementById("aPlay"),
     aPlayIco = document.getElementById("aPlayIco"),
     aNow = document.getElementById("aNow"),
@@ -116,15 +124,17 @@ const loadPlayer = function (mediaID) {
   document.querySelector('#player').style.display = 'block'
 }
 
-const openAsset = function (asset) {
+const openAsset = async function (asset) {
   document.querySelector('#asset-detail-title').innerText = asset.title || 'Unknown title'
 
   document.querySelector('#asset-id').innerText = asset.id || ''
   document.querySelector('#asset-author').innerText = asset.author || 'Unknown author'
   document.querySelector('#asset-description').innerText = asset.body || ''
-  document.querySelector('#asset-media-id').innerText = asset?.media?.id || 'No media'
 
-  loadPlayer(asset?.media?.id)
+  const mediaStatus = await fetchAssetMediaStatus(asset.id)
+  document.querySelector('#asset-media-status').innerText = mediaStatus?.status || 'Media not found'
+
+  loadPlayer(mediaStatus?.uri)
 }
 
 const buildAssetDom = function (asset) {
@@ -139,8 +149,21 @@ const buildAssetDom = function (asset) {
   assetContainer.querySelector('.asset-date').innerText = date.toLocaleString()
 
   assetContainer.querySelectorAll('*').forEach(node => {
+    let canOpen = true // dumb debouncce
     node.addEventListener('click', () => {
+      if (!canOpen) {
+        return
+      }
+      canOpen = false
       openAsset(asset)
+        .then(() => {
+          canOpen = true
+        })
+        .catch(error => {
+          canOpen = true
+          console.error(error)
+          alert(`Error opening asset ${asset.id}. ${error.message}`)
+        })
     })
   })
 

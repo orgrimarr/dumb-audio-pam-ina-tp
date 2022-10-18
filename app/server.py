@@ -3,9 +3,26 @@ from flask_expects_json import expects_json
 from jsonschema import ValidationError
 from uuid import uuid4
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+import boto3
 
-assets = [{"id": "1", "title": "Demo PAM", "author": "Julien", "body": "Demo",
-           "date": "2022-10-18T10:50:47.350Z", "media": {"id": "example"}}]
+load_dotenv()
+
+S3_HOST = os.getenv('CELLAR_ADDON_HOST')
+S3_KEY = os.getenv('CELLAR_ADDON_KEY_ID')
+S3_SECRET = os.getenv('CELLAR_ADDON_KEY_SECRET')
+PORT = int(os.getenv('PORT')) if os.getenv('PORT') else 5000
+
+s3 = boto3.client(
+    's3',
+    endpoint_url=f"https://{S3_HOST}",
+    aws_access_key_id=S3_KEY,
+    aws_secret_access_key=S3_SECRET
+)
+
+assets = [{"id": "example", "title": "Demo PAM", "author": "Julien", "body": "Demo",
+           "date": "2022-10-18T10:50:47.350Z"}]
 
 asset_schema = {
     'type': 'object',
@@ -18,6 +35,25 @@ asset_schema = {
     'required': ['title', 'author', 'body']
 
 }
+
+
+def s3_get_download_url(asset_id):
+    media_key = f"audio/{asset_id}.mp3"
+    result = s3.list_objects(
+        Bucket="pam", Prefix=media_key, Delimiter='/', MaxKeys=1)
+    if 'Contents' in result:
+        for obj in result['Contents']:
+            if obj['Key'] == media_key:
+                url = s3.generate_presigned_url(
+                    ClientMethod='get_object',
+                    Params={
+                        'Bucket': 'pam',
+                        'Key': media_key
+                    }
+                )
+                return url, media_key
+    return None, media_key
+
 
 app = Flask(__name__)
 
@@ -45,14 +81,15 @@ def create_asset():
     new_asset.update(new_values)
 
     assets.append(new_asset)
-    return json.dumps(assets)
+    return json.dumps(new_asset)
 
-
-@app.route('/asset/<asset_id>/media', methods=['GET'])
-def get_asset_media(asset_id):
-    if (asset_id == 'example'):
-        return send_file('/home/orgrimarr/git/dumb-audio-pam-ina-tp/app/static/audio/bensound-thecalling.mp3', mimetype="audio/mp3", as_attachment=False)
-    return Response(status=200, mimetype="audio/mp3")
+@app.route('/assets/<asset_id>/media_status', methods=['GET'])
+def get_asset_media_status(asset_id):
+    media_uri, media_key = s3_get_download_url(asset_id)
+    if (media_uri):
+        return json.dumps({"status": f"Media available in s3 storage. ({media_key})", "uri": media_uri})
+    else:
+        return json.dumps({"status": f"Media {asset_id} not found.  ({media_key})"})
 
 
 @app.errorhandler(400)
@@ -72,6 +109,5 @@ def not_found(error):
 def server_error(error):
     return json.dumps({"message": f"{error}. See logs for more details"})
 
-
 if __name__ == '__main__':
-    app.run()
+    app.run(port=PORT)

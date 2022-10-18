@@ -1,2 +1,4 @@
 flask
 flask-expects-json
+boto3
+python-dotenv
