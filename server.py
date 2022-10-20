@@ -6,8 +6,15 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 import boto3
-
+from peewee import PostgresqlDatabase, Model, CharField, UUIDField, DateTimeField
+import psycopg2.extras
 load_dotenv()
+
+DB_NAME = os.getenv('POSTGRESQL_ADDON_DB')
+DB_HOST = os.getenv('POSTGRESQL_ADDON_HOST')
+DB_PASSWORD = os.getenv('POSTGRESQL_ADDON_PASSWORD')
+DB_PORT = os.getenv('POSTGRESQL_ADDON_PORT')
+DB_USER = os.getenv('POSTGRESQL_ADDON_USER')
 
 S3_HOST = os.getenv('CELLAR_ADDON_HOST')
 S3_KEY = os.getenv('CELLAR_ADDON_KEY_ID')
@@ -23,8 +30,23 @@ s3 = boto3.client(
     aws_secret_access_key=S3_SECRET
 )
 
-assets = [{"id": "example", "title": "Demo PAM", "author": "Julien", "body": "Demo",
-           "date": "2022-10-18T10:50:47.350Z"}]
+db = PostgresqlDatabase(DB_NAME, user=DB_USER,
+                        password=DB_PASSWORD, host=DB_HOST)
+psycopg2.extras.register_uuid()
+
+
+class BaseModel(Model):
+    class Meta:
+        database = db
+
+
+class Assets(BaseModel):
+    id = UUIDField(unique=True, primary_key=True)
+    title = CharField()
+    author = CharField()
+    body = CharField()
+    date = DateTimeField()
+
 
 asset_schema = {
     'type': 'object',
@@ -57,6 +79,22 @@ def s3_get_download_url(asset_id):
     return None, media_key
 
 
+def s3_list_assets():
+    asset_list = []
+    for asset in Assets.select():
+        asset_list.append({'id': asset.id, 'title': asset.title,
+                          'author': asset.author, 'body': asset.body, 'date': asset.date})
+    return asset_list
+
+
+def s3_save_asset(asset):
+    to_save = Assets(id=asset.get('id'), title=asset.get('title'), author=asset.get(
+        'author'), body=asset.get('body'), date=asset.get('date'))
+    modified_rows = to_save.save(force_insert=True)
+    if modified_rows != 1:
+        raise Exception('Error saving data to db. No data saved')
+
+
 app = Flask(__name__)
 
 
@@ -67,7 +105,7 @@ def index():
 
 @app.route('/assets', methods=['GET'])
 def get_assets():
-    return json.dumps(assets)
+    return json.dumps(s3_list_assets())
 
 
 @app.route('/assets', methods=['POST'])
@@ -82,7 +120,7 @@ def create_asset():
     }
     new_asset.update(new_values)
 
-    assets.append(new_asset)
+    s3_save_asset(new_asset)
     return json.dumps(new_asset)
 
 

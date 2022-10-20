@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS assets;
+
+CREATE TABLE assets (
+  id uuid NOT NULL,
+  date TIMESTAMP WITH TIME ZONE NOT NULL,
+  title VARCHAR NOT NULL,
+  author VARCHAR NOT NULL,
+  body VARCHAR NOT NULL,
+  PRIMARY KEY (id)
+);
