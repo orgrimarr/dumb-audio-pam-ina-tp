@@ -57,7 +57,6 @@ asset_schema = {
     },
     'additionalProperties': False,
     'required': ['title', 'author', 'body']
-
 }
 
 
@@ -112,7 +111,9 @@ def get_assets():
 @expects_json(asset_schema)
 def create_asset():
     now = datetime.now()
-
+    bearer = request.headers.get('authorization')
+    if not bearer or bearer != "Bearer super-secure-token":
+        return make_response(jsonify({'message': "Unauthorized"}), 401)
     new_asset = request.get_json(force=True)
     new_values = {
         "id": uuid4(),
