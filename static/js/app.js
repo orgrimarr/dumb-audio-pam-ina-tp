@@ -128,7 +128,7 @@ const openAsset = async function (asset) {
   document.querySelector('#asset-detail-title').innerText = asset.title || 'Unknown title'
 
   document.querySelector('#asset-id').innerText = asset.id || ''
-  document.querySelector('#asset-title').innerText = asset.title || ''
+  document.querySelector('#asset-title').innerText = asset.title || 'Unknown title'
   document.querySelector('#asset-author').innerText = asset.author || 'Unknown author'
   document.querySelector('#asset-description').innerText = asset.body || ''
 
