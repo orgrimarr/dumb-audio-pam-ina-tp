@@ -83,7 +83,7 @@ def s3_list_assets():
     for asset in Assets.select():
         asset_list.append({'id': asset.id, 'title': asset.title,
                           'author': asset.author, 'body': asset.body, 'date': asset.date})
-    return asset_list
+    return asset_list.sort(key='date')
 
 
 def s3_save_asset(asset):
