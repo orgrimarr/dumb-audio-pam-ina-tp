@@ -4,7 +4,16 @@ const fetchAssets = async function () {
     throw new Error(`Error fetching asset list. ${result.status} ${result.statusText} ${await result.text()}`)
   }
   const assets = await result.json()
-  return assets || []
+  return (assets || [])
+    .map(asset => {
+      asset.date = asset.date
+        ? new Date(asset.date)
+        : new Date(Date.now())
+      return asset
+    })
+    .sort((asset1, asset2) => {
+      return asset1.date.getTime() < asset2.date.getTime()
+    })
 }
 
 const fetchAssetMediaStatus = async function (assetID) {
@@ -144,10 +153,8 @@ const buildAssetDom = function (asset) {
 
   assetContainer.querySelector('.asset-title').innerText = asset.title
   assetContainer.querySelector('.asset-author').innerText = asset.author
-  const date = asset.date
-    ? new Date(asset.date)
-    : new Date(Date.now())
-  assetContainer.querySelector('.asset-date').innerText = date.toLocaleString()
+
+  assetContainer.querySelector('.asset-date').innerText = asset.date.toLocaleString()
 
   assetContainer.querySelectorAll('*').forEach(node => {
     let canOpen = true // dumb debouncce

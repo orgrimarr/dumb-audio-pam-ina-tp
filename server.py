@@ -83,7 +83,7 @@ def s3_list_assets():
     for asset in Assets.select():
         asset_list.append({'id': asset.id, 'title': asset.title,
                           'author': asset.author, 'body': asset.body, 'date': asset.date})
-    return asset_list.sort(key='date')
+    return asset_list
 
 
 def s3_save_asset(asset):
@@ -144,12 +144,12 @@ def bad_request(error):
 
 @app.errorhandler(404)
 def not_found(error):
-    return json.dumps({"message": f"Endpoint {request.method} {request.path} not found"})
+    return make_response(jsonify({"message": f"Endpoint {request.method} {request.path} not found"}), 404)
 
 
 @app.errorhandler(500)
 def server_error(error):
-    return json.dumps({"message": f"{error}. See logs for more details"})
+    return make_response(jsonify({"message": f"{error}. See logs for more details"}), 500)
 
 
 if __name__ == '__main__':
