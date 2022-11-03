@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 import boto3
-from peewee import PostgresqlDatabase, Model, CharField, UUIDField, DateTimeField
+from peewee import PostgresqlDatabase, Model, CharField, UUIDField, DateTimeField, DoesNotExist
 import psycopg2.extras
 load_dotenv()
 
@@ -60,22 +60,34 @@ asset_schema = {
 }
 
 
-def s3_get_download_url(asset_id):
-    media_key = f"audio/{asset_id}.mp3"
+def get_medias_key(asset_id):
+    return f"audio/{asset_id}.mp3"
+
+
+def s3_file_exists(asset_id):
+    media_key = get_medias_key(asset_id)
     result = s3.list_objects(
         Bucket=S3_BUCKET, Prefix=media_key, Delimiter='/', MaxKeys=1)
     if 'Contents' in result:
         for obj in result['Contents']:
             if obj['Key'] == media_key:
-                url = s3.generate_presigned_url(
-                    ClientMethod='get_object',
-                    Params={
-                        'Bucket': S3_BUCKET,
-                        'Key': media_key
-                    }
-                )
-                return url, media_key
-    return None, media_key
+                return media_key
+    return None
+
+
+def s3_get_download_url(asset_id):
+    media_key = s3_file_exists(asset_id)
+    if media_key:
+        url = s3.generate_presigned_url(
+            ClientMethod='get_object',
+            Params={
+                'Bucket': S3_BUCKET,
+                'Key': media_key
+            }
+        )
+        return url, media_key
+    else:
+        return None, get_medias_key(asset_id)
 
 
 def s3_list_assets():
@@ -84,6 +96,11 @@ def s3_list_assets():
         asset_list.append({'id': asset.id, 'title': asset.title,
                           'author': asset.author, 'body': asset.body, 'date': asset.date})
     return asset_list
+
+
+def s3_delete(asset_id):
+    media_key = get_medias_key(asset_id)
+    s3.delete_object(Bucket=S3_BUCKET, Key=media_key)
 
 
 def s3_save_asset(asset):
@@ -132,6 +149,26 @@ def get_asset_media_status(asset_id):
         return json.dumps({"status": f"Media available in s3 storage. ({media_key})", "uri": media_uri})
     else:
         return json.dumps({"status": f"Media {asset_id} not found.  ({media_key})"})
+
+
+@app.route('/assets/<asset_id>', methods=['GET'])
+def get_asset(asset_id):
+    try:
+        asset = Assets.get_by_id(asset_id)
+        return json.dumps({'id': asset.id, 'title': asset.title,
+                           'author': asset.author, 'body': asset.body, 'date': asset.date})
+    except DoesNotExist:
+        return make_response(jsonify({'message': f"Asset with id {asset_id} does not exists"}), 404)
+
+
+@app.route('/assets/<asset_id>', methods=['DELETE'])
+def delete_asset(asset_id):
+    try:
+        s3_delete(asset_id)
+        Assets.delete_by_id(asset_id)
+        return json.dumps({"id": asset_id})
+    except DoesNotExist:
+        return make_response(jsonify({'message': f"Asset with id {asset_id} does not exists"}), 404)
 
 
 @app.errorhandler(400)
