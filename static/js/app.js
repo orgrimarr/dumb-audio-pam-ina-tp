@@ -160,7 +160,7 @@ const buildAssetDom = function (asset) {
       const result = await fetch(`/assets/${asset.id}`, {
         method: 'DELETE'
       })
-      init()
+      await init()
     }
     catch (error) {
       console.error(error)
@@ -213,4 +213,12 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(error)
       alert(`Error loading app. ${error.message}`)
     })
+
+  setInterval(() => {
+    init()
+    .catch(error => {
+      console.error(error)
+      alert(`Error loading app. ${error.message}`)
+    })
+  }, 3000)
 })
