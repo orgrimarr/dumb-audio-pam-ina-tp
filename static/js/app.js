@@ -157,8 +157,6 @@ const buildAssetDom = function (asset) {
   assetContainer.querySelector('.asset-date').innerText = asset.date.toLocaleString()
   assetContainer.querySelector('.asset-delete').addEventListener('click', async (e) => {
     try {
-      e.stopPropagation()
-      e.preventDefault()
       const result = await fetch(`/assets/${asset.id}`, {
         method: 'DELETE'
       })
