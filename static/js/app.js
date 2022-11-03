@@ -155,10 +155,26 @@ const buildAssetDom = function (asset) {
   assetContainer.querySelector('.asset-author').innerText = asset.author
 
   assetContainer.querySelector('.asset-date').innerText = asset.date.toLocaleString()
+  assetContainer.querySelector('.asset-delete').addEventListener('click', async (e) => {
+    try {
+      e.stopPropagation()
+      e.preventDefault()
+      const result = await fetch(`/assets/${asset.id}`, {
+        method: 'DELETE'
+      })
+      init()
+    }
+    catch (error) {
+      console.error(error)
+      alert(`Error deleting asset ${asset.id}. ${error.message}`)
+    }
+  })
 
   assetContainer.querySelectorAll('*').forEach(node => {
     let canOpen = true // dumb debouncce
-    node.addEventListener('click', () => {
+    node.addEventListener('click', (e) => {
+      e.stopPropagation()
+      e.preventDefault()
       if (!canOpen) {
         return
       }
