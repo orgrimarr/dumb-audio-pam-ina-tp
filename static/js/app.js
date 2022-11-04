@@ -12,7 +12,7 @@ const fetchAssets = async function () {
       return asset
     })
     .sort((asset1, asset2) => {
-      return asset1.date.getTime() < asset2.date.getTime()
+      return asset1.date - asset2.date
     })
 }
 
@@ -206,7 +206,7 @@ const displayAssets = function (assets) {
 }
 
 const init = async function () {
-  let assets = await fetchAssets()
+  const assets = await fetchAssets()
   displayAssets(assets)
 }
 
