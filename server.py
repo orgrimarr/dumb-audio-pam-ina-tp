@@ -164,6 +164,9 @@ def get_asset(asset_id):
 @app.route('/assets/<asset_id>', methods=['DELETE'])
 def delete_asset(asset_id):
     try:
+        bearer = request.headers.get('authorization')
+        if not bearer or bearer != "Bearer super-secure-hardcoded-delete-token":
+            return make_response(jsonify({'message': "Unauthorized"}), 401)
         s3_delete(asset_id)
         Assets.delete_by_id(asset_id)
         return json.dumps({"id": asset_id})

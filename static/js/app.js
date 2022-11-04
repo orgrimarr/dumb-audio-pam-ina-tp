@@ -158,6 +158,10 @@ const buildAssetDom = function (asset) {
   assetContainer.querySelector('.asset-delete').addEventListener('click', async (e) => {
     try {
       const result = await fetch(`/assets/${asset.id}`, {
+        headers: {
+          // Super secure password storage... ;)
+          'Authorization': atob(atob('UW1WaGNtVnlJSE4xY0dWeUxYTmxZM1Z5WlMxb1lYSmtZMjlrWldRdFpHVnNaWFJsTFhSdmEyVnU='))
+        },
         method: 'DELETE'
       })
       await init()
@@ -216,9 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setInterval(() => {
     init()
-    .catch(error => {
-      console.error(error)
-      alert(`Error loading app. ${error.message}`)
-    })
+      .catch(error => {
+        console.error(error)
+        alert(`Error loading app. ${error.message}`)
+      })
   }, 3000)
 })
